@@ -22,15 +22,26 @@ def generate_resume(data):
     prompt = f"""
 You are a professional resume writer.
 
-Generate a resume EXACTLY in this structure:
+Generate resume in EXACT CLEAN FORMAT.
 
-Name
+IMPORTANT RULES:
+- ONLY main headings should be bold
+- Sub-sections should NOT be bold
+- Keep everything aligned clean
+- Skills should NOT break into multiple lines randomly
+- No unnecessary spacing
+- No markdown symbols like **
+
+FORMAT:
+
+Name (BIG)
+
 Email | Phone | Location | LinkedIn | GitHub
 
 --------------------------------------------------
 
 CAREER OBJECTIVE:
-(4-5 lines)
+(4 lines clean paragraph)
 
 --------------------------------------------------
 
@@ -42,43 +53,43 @@ Company | Duration | Location
 --------------------------------------------------
 
 EDUCATION
-Degree,
-College, Location
+Degree
+College
 
 --------------------------------------------------
 
 TECHNICAL SKILLS
 
 Agentic AI & LLM Development:
-(list in line format)
+LangChain, LangGraph, RAG, SQL
 
 Deep Learning:
-(list)
+TensorFlow, Pandas
 
 Machine Learning:
-(list)
+Random Forest, LSTM
 
 Programming Data Analysis & Libraries:
-(list)
+Python, R
 
 Chatbot & LLM Development:
-(list)
+RAG, FAISS
 
 Core Concepts:
-(list)
+Generative AI, NLP
 
 Natural Language Processing (NLP):
-(list)
+Text classification, Sentiment analysis
 
 Tools & Platforms:
-(list)
+GitHub, Jupyter Notebook
 
 --------------------------------------------------
 
 PROJECTS
 
 Project Name
-• Description lines (5–6 points)
+• Bullet points (clean, 5 lines max)
 
 --------------------------------------------------
 
@@ -88,16 +99,9 @@ CERTIFICATES
 --------------------------------------------------
 
 LANGUAGES
-List in simple format (NO bullet, NO bold)
+English, Hindi, Telugu
 
 --------------------------------------------------
-
-RULES:
-- DO NOT use ** or markdown
-- Keep spacing clean
-- Do NOT mix sections
-- Follow EXACT headings
-- Keep formatting structured
 
 User Data:
 Name: {data['name']}
@@ -126,19 +130,33 @@ def create_pdf(text, filename="resume.pdf"):
 
     doc = SimpleDocTemplate(filename)
 
-    name_style = ParagraphStyle(name="Name", fontSize=18, spaceAfter=10)
-    heading_style = ParagraphStyle(name="Heading", fontSize=12, spaceBefore=10)
-    normal_style = ParagraphStyle(name="Normal", fontSize=10, leading=14)
+    name_style = ParagraphStyle(
+        name="Name",
+        fontSize=18,
+        spaceAfter=6
+    )
+
+    heading_style = ParagraphStyle(
+        name="Heading",
+        fontSize=11,
+        spaceBefore=10
+    )
+
+    normal_style = ParagraphStyle(
+        name="Normal",
+        fontSize=10,
+        leading=14
+    )
 
     content = []
     lines = text.split("\n")
 
     for i, line in enumerate(lines):
 
-        line = line.strip().replace("**", "")
+        line = line.strip()
 
         if not line:
-            content.append(Spacer(1, 6))
+            content.append(Spacer(1, 5))
             continue
 
         # NAME
@@ -146,57 +164,25 @@ def create_pdf(text, filename="resume.pdf"):
             content.append(Paragraph(f"<b>{line}</b>", name_style))
             continue
 
-        # SECTION HEADINGS
-        if line.isupper() or line.endswith(":"):
+        # MAIN HEADINGS ONLY
+        if line in [
+            "CAREER OBJECTIVE:",
+            "PROFESSIONAL TRAINING",
+            "EDUCATION",
+            "TECHNICAL SKILLS",
+            "PROJECTS",
+            "CERTIFICATES",
+            "LANGUAGES"
+        ]:
             content.append(Paragraph(f"<b>{line}</b>", heading_style))
             content.append(
-                HRFlowable(width="100%", thickness=1.5, color=colors.black)
+                HRFlowable(width="100%", thickness=1.2, color=colors.black)
             )
             continue
 
+        # NORMAL TEXT (NO EXTRA BOLD)
         content.append(Paragraph(line, normal_style))
 
     doc.build(content)
 
     return filename
-
-# -------------------------
-# UI
-# -------------------------
-st.title("AI Resume Builder 🚀")
-
-name = st.text_input("Name")
-education = st.text_input("Education")
-skills = st.text_area("Skills")
-projects = st.text_area("Projects")
-experience = st.text_area("Experience")
-certifications = st.text_area("Certifications")
-links = st.text_area("Links")
-jd = st.text_area("Job Description")
-
-if st.button("Generate Resume"):
-
-    data = {
-        "name": name,
-        "education": education,
-        "skills": skills,
-        "projects": projects,
-        "experience": experience,
-        "certifications": certifications,
-        "links": links,
-        "job_description": jd
-    }
-
-    resume = generate_resume(data)
-
-    st.subheader("Resume")
-    st.text(resume)
-
-    pdf_file = create_pdf(resume)
-
-    with open(pdf_file, "rb") as f:
-        st.download_button(
-            "Download PDF",
-            f.read(),
-            file_name="resume.pdf"
-        )
