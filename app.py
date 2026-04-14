@@ -3,7 +3,6 @@ from langchain_groq import ChatGroq
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib import colors
-import os
 
 # -------------------------
 # 🔐 API KEY
@@ -17,6 +16,17 @@ llm = ChatGroq(
 )
 
 # -------------------------
+# 🧹 CLEAN FUNCTION (VERY IMPORTANT)
+# -------------------------
+def clean_text(text):
+    text = text.replace("**", "")
+    text = text.replace("* ", "• ")
+    text = text.replace("*", "")
+    text = text.replace("User Data:", "")
+    return text.strip()
+
+
+# -------------------------
 # 🧠 AI FUNCTION
 # -------------------------
 def generate_resume(data):
@@ -24,14 +34,15 @@ def generate_resume(data):
     prompt = f"""
 You are a professional resume writer.
 
-Generate resume in EXACT CLEAN FORMAT.
+Generate a clean ATS-friendly resume.
 
-IMPORTANT RULES:
-- ONLY main headings should be bold
-- Sub-sections should NOT be bold
-- Keep everything aligned clean
-- Skills should NOT break randomly
-- No markdown (**)
+STRICT RULES:
+- Do NOT use ** or *
+- Do NOT use markdown
+- Use only plain text
+- Use • for bullets
+- Do NOT include "User Data"
+- Do NOT repeat input
 
 FORMAT:
 
@@ -42,7 +53,7 @@ Email | Phone | Location | LinkedIn | GitHub
 --------------------------------------------------
 
 CAREER OBJECTIVE:
-(4 lines)
+(4–5 lines)
 
 --------------------------------------------------
 
@@ -60,36 +71,13 @@ College
 --------------------------------------------------
 
 TECHNICAL SKILLS
-
-Agentic AI & LLM Development:
-(list)
-
-Deep Learning:
-(list)
-
-Machine Learning:
-(list)
-
-Programming Data Analysis & Libraries:
-(list)
-
-Chatbot & LLM Development:
-(list)
-
-Core Concepts:
-(list)
-
-Natural Language Processing (NLP):
-(list)
-
-Tools & Platforms:
-(list)
+Group skills properly
 
 --------------------------------------------------
 
 PROJECTS
 Project Name
-• Points
+• Bullet points
 
 --------------------------------------------------
 
@@ -99,11 +87,12 @@ CERTIFICATES
 --------------------------------------------------
 
 LANGUAGES
-List
+Simple list
 
 --------------------------------------------------
 
-User Data:
+Use this data:
+
 Name: {data['name']}
 Education: {data['education']}
 Skills: {data['skills']}
@@ -115,7 +104,10 @@ Job Description: {data['job_description']}
 """
 
     res = llm.invoke(prompt)
-    return res.content
+
+    cleaned = clean_text(res.content)
+
+    return cleaned
 
 
 # -------------------------
@@ -166,18 +158,18 @@ def create_pdf(text, filename="resume.pdf"):
 
 
 # -------------------------
-# 🎯 STREAMLIT UI (VERY IMPORTANT 🔥)
+# 🎯 STREAMLIT UI
 # -------------------------
 
 st.title("AI Resume Builder 🚀")
 
 name = st.text_input("Name")
 education = st.text_input("Education")
-skills = st.text_input("Skills (comma separated)")
+skills = st.text_input("Skills")
 projects = st.text_area("Projects")
 experience = st.text_area("Experience")
 certifications = st.text_area("Certifications")
-links = st.text_area("Links (Email | Phone | LinkedIn etc.)")
+links = st.text_area("Links")
 jd = st.text_area("Job Description")
 
 if st.button("Generate Resume"):
@@ -194,6 +186,7 @@ if st.button("Generate Resume"):
     }
 
     with st.spinner("Generating Resume..."):
+
         resume_text = generate_resume(data)
 
         st.subheader("📄 Resume Preview")
