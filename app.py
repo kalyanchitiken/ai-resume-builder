@@ -20,12 +20,86 @@ llm = ChatGroq(
 def generate_resume(data):
 
     prompt = f"""
-Generate ATS-friendly resume.
+You are a professional resume writer.
 
-Rules:
-- No markdown (** or *)
-- Use • bullets
+Generate a resume EXACTLY in this structure:
 
+Name
+Email | Phone | Location | LinkedIn | GitHub
+
+--------------------------------------------------
+
+CAREER OBJECTIVE:
+(4-5 lines)
+
+--------------------------------------------------
+
+PROFESSIONAL TRAINING
+Role
+Company | Duration | Location
+• Bullet points (5–6)
+
+--------------------------------------------------
+
+EDUCATION
+Degree,
+College, Location
+
+--------------------------------------------------
+
+TECHNICAL SKILLS
+
+Agentic AI & LLM Development:
+(list in line format)
+
+Deep Learning:
+(list)
+
+Machine Learning:
+(list)
+
+Programming Data Analysis & Libraries:
+(list)
+
+Chatbot & LLM Development:
+(list)
+
+Core Concepts:
+(list)
+
+Natural Language Processing (NLP):
+(list)
+
+Tools & Platforms:
+(list)
+
+--------------------------------------------------
+
+PROJECTS
+
+Project Name
+• Description lines (5–6 points)
+
+--------------------------------------------------
+
+CERTIFICATES
+• List
+
+--------------------------------------------------
+
+LANGUAGES
+List in simple format (NO bullet, NO bold)
+
+--------------------------------------------------
+
+RULES:
+- DO NOT use ** or markdown
+- Keep spacing clean
+- Do NOT mix sections
+- Follow EXACT headings
+- Keep formatting structured
+
+User Data:
 Name: {data['name']}
 Education: {data['education']}
 Skills: {data['skills']}
@@ -43,51 +117,48 @@ Job Description: {data['job_description']}
 # -------------------------
 # PDF FUNCTION
 # -------------------------
-def create_pdf(text):
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib import colors
 
-    filename = "resume.pdf"
+
+def create_pdf(text, filename="resume.pdf"):
 
     doc = SimpleDocTemplate(filename)
 
-    name_style = ParagraphStyle(name="Name", fontSize=18)
-    section_style = ParagraphStyle(name="Section", fontSize=12)
-    normal_style = ParagraphStyle(name="Normal", fontSize=10)
+    name_style = ParagraphStyle(name="Name", fontSize=18, spaceAfter=10)
+    heading_style = ParagraphStyle(name="Heading", fontSize=12, spaceBefore=10)
+    normal_style = ParagraphStyle(name="Normal", fontSize=10, leading=14)
 
     content = []
     lines = text.split("\n")
 
-    SECTION_KEYWORDS = [
-        "Career Objective",
-        "Professional Experience",
-        "Education",
-        "Technical Skills",
-        "Projects",
-        "Certifications",
-        "Languages"
-    ]
-
     for i, line in enumerate(lines):
 
-        line = line.replace("**", "").replace("*", "").strip()
+        line = line.strip().replace("**", "")
 
         if not line:
-            content.append(Spacer(1, 8))
+            content.append(Spacer(1, 6))
             continue
 
+        # NAME
         if i == 0:
             content.append(Paragraph(f"<b>{line}</b>", name_style))
             continue
 
-        if any(k in line for k in SECTION_KEYWORDS):
-            content.append(Paragraph(line, section_style))
-            content.append(HRFlowable(width="100%", thickness=1.5))
+        # SECTION HEADINGS
+        if line.isupper() or line.endswith(":"):
+            content.append(Paragraph(f"<b>{line}</b>", heading_style))
+            content.append(
+                HRFlowable(width="100%", thickness=1.5, color=colors.black)
+            )
             continue
 
         content.append(Paragraph(line, normal_style))
 
     doc.build(content)
-    return filename
 
+    return filename
 
 # -------------------------
 # UI
