@@ -113,13 +113,37 @@ Job Description: {data['job_description']}
 # -------------------------
 # 📄 PDF FUNCTION
 # -------------------------
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib import colors
+
 def create_pdf(text, filename="resume.pdf"):
 
     doc = SimpleDocTemplate(filename)
 
-    name_style = ParagraphStyle(name="Name", fontSize=18, spaceAfter=6)
-    heading_style = ParagraphStyle(name="Heading", fontSize=11, spaceBefore=10)
-    normal_style = ParagraphStyle(name="Normal", fontSize=10, leading=14)
+    name_style = ParagraphStyle(
+        name="Name",
+        fontSize=20,
+        spaceAfter=10
+    )
+
+    contact_style = ParagraphStyle(
+        name="Contact",
+        fontSize=10,
+        spaceAfter=10
+    )
+
+    heading_style = ParagraphStyle(
+        name="Heading",
+        fontSize=11,
+        spaceBefore=10
+    )
+
+    normal_style = ParagraphStyle(
+        name="Normal",
+        fontSize=10,
+        leading=14
+    )
 
     content = []
     lines = text.split("\n")
@@ -129,15 +153,30 @@ def create_pdf(text, filename="resume.pdf"):
         line = line.strip()
 
         if not line:
-            content.append(Spacer(1, 5))
+            content.append(Spacer(1, 6))
             continue
 
-        # NAME
+        # ✅ NAME (BIG + GAP)
         if i == 0:
             content.append(Paragraph(f"<b>{line}</b>", name_style))
             continue
 
-        # HEADINGS
+        # ✅ CONTACT LINE WITH ICONS
+        if i == 1:
+            line = line.replace("Email:", "📧")
+            line = line.replace("Phone:", "📞")
+            line = line.replace("Location:", "📍")
+            line = line.replace("LinkedIn:", "🔗")
+            line = line.replace("GitHub:", "💻")
+
+            content.append(Paragraph(line, contact_style))
+            continue
+
+        # ❌ REMOVE EXTRA DASH LINES
+        if "-----" in line:
+            continue
+
+        # ✅ HEADINGS
         if line in [
             "CAREER OBJECTIVE:",
             "PROFESSIONAL TRAINING",
@@ -148,14 +187,16 @@ def create_pdf(text, filename="resume.pdf"):
             "LANGUAGES"
         ]:
             content.append(Paragraph(f"<b>{line}</b>", heading_style))
-            content.append(HRFlowable(width="100%", thickness=1.2, color=colors.black))
+            content.append(
+                HRFlowable(width="100%", thickness=1.2, color=colors.black)
+            )
             continue
 
         content.append(Paragraph(line, normal_style))
 
     doc.build(content)
-    return filename
 
+    return filename
 
 # -------------------------
 # 🎯 STREAMLIT UI
