@@ -5,7 +5,9 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib import colors
 import os
 
-# 🔐 API KEY (Streamlit Cloud will use secrets)
+# -------------------------
+# 🔐 API KEY
+# -------------------------
 api_key = st.secrets["GROQ_API_KEY"]
 
 llm = ChatGroq(
@@ -15,7 +17,7 @@ llm = ChatGroq(
 )
 
 # -------------------------
-# AI FUNCTION
+# 🧠 AI FUNCTION
 # -------------------------
 def generate_resume(data):
 
@@ -28,27 +30,26 @@ IMPORTANT RULES:
 - ONLY main headings should be bold
 - Sub-sections should NOT be bold
 - Keep everything aligned clean
-- Skills should NOT break into multiple lines randomly
-- No unnecessary spacing
-- No markdown symbols like **
+- Skills should NOT break randomly
+- No markdown (**)
 
 FORMAT:
 
-Name (BIG)
+Name
 
 Email | Phone | Location | LinkedIn | GitHub
 
 --------------------------------------------------
 
 CAREER OBJECTIVE:
-(4 lines clean paragraph)
+(4 lines)
 
 --------------------------------------------------
 
 PROFESSIONAL TRAINING
 Role
 Company | Duration | Location
-• Bullet points (5–6)
+• Bullet points
 
 --------------------------------------------------
 
@@ -61,35 +62,34 @@ College
 TECHNICAL SKILLS
 
 Agentic AI & LLM Development:
-LangChain, LangGraph, RAG, SQL
+(list)
 
 Deep Learning:
-TensorFlow, Pandas
+(list)
 
 Machine Learning:
-Random Forest, LSTM
+(list)
 
 Programming Data Analysis & Libraries:
-Python, R
+(list)
 
 Chatbot & LLM Development:
-RAG, FAISS
+(list)
 
 Core Concepts:
-Generative AI, NLP
+(list)
 
 Natural Language Processing (NLP):
-Text classification, Sentiment analysis
+(list)
 
 Tools & Platforms:
-GitHub, Jupyter Notebook
+(list)
 
 --------------------------------------------------
 
 PROJECTS
-
 Project Name
-• Bullet points (clean, 5 lines max)
+• Points
 
 --------------------------------------------------
 
@@ -99,7 +99,7 @@ CERTIFICATES
 --------------------------------------------------
 
 LANGUAGES
-English, Hindi, Telugu
+List
 
 --------------------------------------------------
 
@@ -119,34 +119,15 @@ Job Description: {data['job_description']}
 
 
 # -------------------------
-# PDF FUNCTION
+# 📄 PDF FUNCTION
 # -------------------------
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib import colors
-
-
 def create_pdf(text, filename="resume.pdf"):
 
     doc = SimpleDocTemplate(filename)
 
-    name_style = ParagraphStyle(
-        name="Name",
-        fontSize=18,
-        spaceAfter=6
-    )
-
-    heading_style = ParagraphStyle(
-        name="Heading",
-        fontSize=11,
-        spaceBefore=10
-    )
-
-    normal_style = ParagraphStyle(
-        name="Normal",
-        fontSize=10,
-        leading=14
-    )
+    name_style = ParagraphStyle(name="Name", fontSize=18, spaceAfter=6)
+    heading_style = ParagraphStyle(name="Heading", fontSize=11, spaceBefore=10)
+    normal_style = ParagraphStyle(name="Normal", fontSize=10, leading=14)
 
     content = []
     lines = text.split("\n")
@@ -164,7 +145,7 @@ def create_pdf(text, filename="resume.pdf"):
             content.append(Paragraph(f"<b>{line}</b>", name_style))
             continue
 
-        # MAIN HEADINGS ONLY
+        # HEADINGS
         if line in [
             "CAREER OBJECTIVE:",
             "PROFESSIONAL TRAINING",
@@ -175,14 +156,55 @@ def create_pdf(text, filename="resume.pdf"):
             "LANGUAGES"
         ]:
             content.append(Paragraph(f"<b>{line}</b>", heading_style))
-            content.append(
-                HRFlowable(width="100%", thickness=1.2, color=colors.black)
-            )
+            content.append(HRFlowable(width="100%", thickness=1.2, color=colors.black))
             continue
 
-        # NORMAL TEXT (NO EXTRA BOLD)
         content.append(Paragraph(line, normal_style))
 
     doc.build(content)
-
     return filename
+
+
+# -------------------------
+# 🎯 STREAMLIT UI (VERY IMPORTANT 🔥)
+# -------------------------
+
+st.title("AI Resume Builder 🚀")
+
+name = st.text_input("Name")
+education = st.text_input("Education")
+skills = st.text_input("Skills (comma separated)")
+projects = st.text_area("Projects")
+experience = st.text_area("Experience")
+certifications = st.text_area("Certifications")
+links = st.text_area("Links (Email | Phone | LinkedIn etc.)")
+jd = st.text_area("Job Description")
+
+if st.button("Generate Resume"):
+
+    data = {
+        "name": name,
+        "education": education,
+        "skills": skills,
+        "projects": projects,
+        "experience": experience,
+        "certifications": certifications,
+        "links": links,
+        "job_description": jd
+    }
+
+    with st.spinner("Generating Resume..."):
+        resume_text = generate_resume(data)
+
+        st.subheader("📄 Resume Preview")
+        st.text(resume_text)
+
+        pdf_file = create_pdf(resume_text)
+
+        with open(pdf_file, "rb") as f:
+            st.download_button(
+                label="📥 Download Resume PDF",
+                data=f,
+                file_name="resume.pdf",
+                mime="application/pdf"
+            )
